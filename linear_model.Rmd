@@ -275,6 +275,19 @@ LUX_temp_case <- LUX %>%
 hist(LUX_temp_case$residual)
 
 ```
+
+
+# Shapiro Test
+```{r}
+y.res<-residuals(LUX_fit)
+head(y.res)
+shapiro.test(y.res)
+
+y2.res<-residuals(BLG_fit)
+head(y2.res)
+shapiro.test(y2.res)
+```
+
 ```{r}
 new.dat <- data.frame(weekly_temp=35)
 predict(BLG_fit, newdata = new.dat, interval = 'confidence')
