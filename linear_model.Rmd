@@ -5,7 +5,7 @@ date: "12/17/2021"
 output: html_document
 ---
 
-aim: I perform a statistical analysis for understanding the effect of the environmental temperature on the exponential growth rate of the cases infected by COVID-19 for Belgium and Luxembourg regions.
+project aim: I perform a statistical analysis for understanding the effect of the environmental temperature on the exponential growth rate of the cases infected by COVID-19 for Belgium and Luxembourg regions.
 
 Hypothesis: $H_0：\beta_1 =0 ；H1:\beta _1 \neq0$
 
