@@ -137,7 +137,6 @@ BLG$cpc <- 10000*BLG$new_cases/blg_population
 # start and end dates for the calculations
 ```{r}
 start_date = as.Date("2020-7-1")
-s_date = as.Date("2020-3-1")
 end_date = as.Date("2021-12-15")
 ```
 
@@ -151,18 +150,18 @@ LUX %>%
   geom_col() +
   geom_point(aes(y = weekly_temp/0.5), color = "red") +
   scale_y_continuous("Daily confirmed new cases per capita", sec.axis = sec_axis( ~.*0.5, name = "Temperature")) +
-  ggtitle("Luxembourg") 
+  ggtitle("The Temperature and Covid afecttion data in Luxembourg") 
 ```
 
 ```{r}
 BLG %>% 
-  filter(date<end_date & date>s_date) %>% 
+  filter(date<end_date & date>start_date) %>% 
   filter(weekly_temp>0) %>% 
 ggplot(  aes(date, cpc)) +
   geom_col() +
   geom_point(aes(y = weekly_temp/0.5), color = "red") +
   scale_y_continuous("Weekly confirmed new cases per capita ", sec.axis = sec_axis( ~.*0.5, name = "Temperature")) +
-  ggtitle("Belgium") 
+  ggtitle("The Temperature and Covid afecttion data in Belgium") 
 ```
 # Weely confirmed new cases pc vs tempreture
 
@@ -189,6 +188,16 @@ BLG %>%
 ```
 
 # Linear Model fit
+statistic mode
+$$ \pmb{Y= \beta_0+\beta_1X+\epsilon \quad where \quad \epsilon \sim N(0,\sigma^2)} $$
+$$ Y \sim N(0,\sigma^2)$$
+$$\pmb{E}(y_i)=E(\beta_0+\beta_1x_i+\epsilon_i)=\beta_0+\beta_1x_i+E(\epsilon_i)=\beta_0+\beta_1x_i$$
+
+$$Var(y_i)=Var(\beta_0+\beta_1X+\epsilon_i)=Var(\epsilon_i)=\sigma^2$$
+## standard model for the evolution of the infected cases by viruses
+$$dN/dt=L(N) \cdot F(N),  \quad with  \quad L(N) = \lambda \cdot N, F(N)=1-N^b$$
+##where N(t) is the number of total infected cases,Nmax is the maximum possible number of infected cases.
+
 ```{r}
 LUX_fit <- LUX %>% 
   filter(date<end_date & date>start_date) %>%
@@ -206,7 +215,7 @@ cov(LUX_C$weekly_temp, LUX_C$logC)
 
 ```{r}
 BLG_fit <- BLG %>% 
-  filter(date<end_date & date>s_date) %>%
+  filter(date<end_date & date>start_date) %>%
   filter(weekly_temp>0) %>% 
   lm(logC ~ weekly_temp, data = .) 
 
@@ -214,10 +223,19 @@ summary(BLG_fit)
 confint(BLG_fit)
 
 BLG_C <- BLG %>% 
-  filter(date<end_date & date>s_date)
+  filter(date<end_date & date>start_date)
 cor(BLG_C$weekly_temp, BLG_C$logC)
 cov(BLG_C$weekly_temp, BLG_C$logC)
 ```
+## Fitting model for the data in Luxembourg Ŷ = 7.96 - 0.105∙T
+$$\hat{Y}=7.96 - 0.105∙T$$
+## Fitting model for the data in Blegium Ŷ = Ŷ = 10.9 - 0.107∙T
+
+$$\hat{Y}=Ŷ = 10.9 - 0.107∙T$$
+## estimation analysis
+Hypothesis: $$H_0：\beta_1 =0 ；H1:\beta _1 \neq0$$
+
+##Test based on the hyperthesis
 
 ```{r}
 autoplot(LUX_fit)
@@ -226,6 +244,10 @@ autoplot(LUX_fit)
 ```{r}
 autoplot(BLG_fit)
 ```
+## calculate T and P values. As observed from the above results, calculated P value is less than alpha. This gave us enough evidence with 95% confidence we say that we reject null hypothesis. In other words, with %95 confidence beta value is not zero. So we reject $ H_0：\beta_1 =0 $.
+
+## Fitting model figure plot
+
 ```{r}
 LUX %>% 
   filter(date<end_date & date>start_date) %>%
@@ -242,7 +264,7 @@ LUX %>%
 
 ```{r}
 BLG %>% 
-  filter(date<end_date & date>s_date) %>%
+  filter(date<end_date & date>start_date) %>%
   filter(weekly_temp>0 ,new_cases>0) %>% 
   ggplot(aes(weekly_temp, logC))+
   geom_point()+
@@ -253,17 +275,36 @@ BLG %>%
   xlim(0, 40)+
   ggtitle("Belgium")
 ```
+
+##  Residual analysis 
+Hypothesis: $$H_0: Residual\sim N(0,\sigma^2) ；H1:Residual \quad  !\sim N(0,\sigma^2)$$
 ```{r}
 
 library(broom)
 BLG_temp_case <- BLG %>% 
-  filter(date<end_date & date>s_date) %>%
+  filter(date<end_date & date>start_date) %>%
   filter(weekly_temp>0 ,new_cases>0) %>% 
   mutate(expected = augment(BLG_fit)$.fitted) %>% 
   mutate(residual = log(new_cases)-expected) 
 
-hist(BLG_temp_case$residual)
+
+ggplot(BLG_temp_case, aes(x=residual)) + 
+    geom_histogram(aes(y=..density..),    
+                   binwidth=.5,
+                   colour="black", fill="light blue") +
+    geom_density(alpha=.2, fill="blue")+
+    stat_function(
+    fun = dnorm,
+    args = list(mean = mean(BLG_temp_case$residual), sd = sd(BLG_temp_case$residual)),
+    linetype=2,
+    size= 1.5,
+    colour="red" )+
+  labs(
+    x = "Residual", y = "Density",
+    title = "Residual distribution of fitting data in Blegium"
+  )
 ```
+
 ```{r}
 library(broom)
 LUX_temp_case <- LUX %>% 
@@ -272,7 +313,20 @@ LUX_temp_case <- LUX %>%
   mutate(expected = augment(LUX_fit)$.fitted) %>% 
   mutate(residual = log(new_cases)-expected) 
 
-hist(LUX_temp_case$residual)
+ggplot(LUX_temp_case, aes(x=residual)) + 
+    geom_histogram(aes(y=..density..),      
+                   binwidth=.5,
+                   colour="black", fill="light blue") +
+    geom_density(alpha=.2, fill="blue") +
+    stat_function(
+    fun = dnorm,
+    args = list(mean = mean(LUX_temp_case$residual), sd = sd(LUX_temp_case$residual)),
+    linetype=2,
+    size= 1.5,
+    colour="red")+
+    labs(
+    x = "Residual", y = "Density",
+    title = "Residual distribution of fitting data in Luxembourg")
 
 ```
 
@@ -287,15 +341,80 @@ y2.res<-residuals(BLG_fit)
 head(y2.res)
 shapiro.test(y2.res)
 ```
+# Test result
+# The selected significance level alpha = 0.05 which is less than p value for both cases. This means, p value area coves the alpha completely so we don’t have enough evidence to reject null hypothesis. Hence the residual population is Normal.
 
+#Compare the coeffiencts in Luxembourg ($\hat{\beta}_1$) and Belgium($\hat{\beta}_1$)
+
+```{r}
+BLG_sum <- BLG_temp_case %>%
+  filter(date<end_date & date>start_date) %>%
+  filter(weekly_temp>0 ,new_cases>0) %>% 
+  mutate(dif_x = weekly_temp - mean(weekly_temp)) %>%
+  mutate(difx2=dif_x^2)%>%
+  summarise(Sxx = sum(difx2),
+            m2 = mean(residual),
+            s2 = sd(residual),
+            V_B = sqrt(abs(s2/Sxx)))
+head(BLG_sum  )
+
+
+LUX_sum <- LUX_temp_case %>%
+  filter(date<end_date & date>start_date) %>%
+  filter(weekly_temp>0 ,new_cases>0) %>% 
+  mutate(dif_x = weekly_temp - mean(weekly_temp)) %>%
+  mutate(difx2=dif_x^2)%>%
+  summarise(Sxx = sum(difx2),
+            m2 = mean(residual),
+            s2 = sd(residual),
+            V_B = sqrt(abs(s2/Sxx)))
+head(LUX_sum  )
+
+
+
+```
+## Visulasition of the coeffiencts in Luxembourg ($\hat{\beta}_1$) and Belgium($\hat{\beta}_1$)
+```{r}
+set.seed(0109)
+dat <-   tibble(
+    x = seq(-0.18,-0.035,length.out = 1000),
+    y1 = dnorm(x, -0.107, BLG_sum$V_B),
+    y2 = dnorm(x, -0.105, LUX_sum$V_B))
+head(dat)
+
+  ggplot(dat) +
+  geom_area(aes(x,y1),fill = "darkblue", alpha = 0.4)+
+  geom_area(aes(x,y2),fill = "red", alpha = 0.4)+
+  geom_vline(xintercept = -0.107, color = "blue",lwd=1) +
+  geom_vline(xintercept = -0.105, color = "red",lwd=1)+
+  labs(title = expression("Comparation the coeffiencts in Luxembourg and Belgium"),
+         x = expression(hat(beta)[1]),
+         y = "density",
+      col = expression(paste('Values of ', mu)))+ 
+    annotate("text", x=-0.15, y=10, colour="darkblue", label= expression(paste("Belgium", hat(beta)[1]))) +
+    annotate("text", x=-0.08, y=22,colour="darkred", label= expression(paste("Luxembourg", hat(beta)[1])))
+
+```
+## Conclusion
+# The results clearly support the statistically significant relationship of negative correlation between the average environmental temperature and exponential growth rates of the infected cases.
+
+
+##Prediction
 ```{r}
 new.dat <- data.frame(weekly_temp=35)
 predict(BLG_fit, newdata = new.dat, interval = 'confidence')
 ```
+
 ```{r}
 
 new.dat <- data.frame(weekly_temp=35)
 predict(LUX_fit, newdata = new.dat, interval = 'confidence')
 
 ```
+
+## Reference
+[1] Livadiotis G. Statistical analysis of the impact of environmental temperature on the exponential growth rate of cases infected by COVID-19[J]. PLoS one, 2020, 15(5): e0233875.
+[2] Relman D. A. Rapid Expert Consultation on SARS-CoV-2 Survival in Relation to Temperature and Humidity and Potential for Seasonality for the COVID-19 Pandemic. The National Academies Press. 2020; https://doi.org/10.17226/25771
+
+
 
