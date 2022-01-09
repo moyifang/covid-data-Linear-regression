@@ -5,7 +5,21 @@ date: "12/17/2021"
 output: html_document
 ---
 
+
+There are indications that the environmental temperature may be an important factor.
+
 project aim: I perform a statistical analysis for understanding the effect of the environmental temperature on the exponential growth rate of the cases infected by COVID-19 for Belgium and Luxembourg regions.
+
+
+## standard model for the evolution of the infected cases by viruses
+$$dN/dt=L(N) \cdot F(N),  \quad with  \quad L(N) = \lambda \cdot N, F(N)=1-N^b$$
+##where N(t) is the number of total infected cases,Nmax is the maximum possible number of infected cases.
+## In short, from the perspective of the model, there are two parameters that affect the Covid infection rate, $\lambda$, and b. This project is to prove that the $\lambda$ is infected by the enviromental temperature. 
+
+statistic mode
+$$ \pmb{Y= \beta_0+\beta_1T+\epsilon \quad where \quad \epsilon \sim N(0,\sigma^2)} $$
+# Where Y is set to be the log data of  weekly new cases 𝑌=𝑐𝜆=log⁡(∆𝑁)
+# T is set to be the weekly average temperature. 
 
 Hypothesis: $H_0：\beta_1 =0 ；H1:\beta _1 \neq0$
 
@@ -40,7 +54,7 @@ weekdata %>%
 glimpse(weekdata)
 
 ```
-# covid data for Lux anf Bel
+# covid data for Luxembourg and Belgium
 
 ```{r}
 Lux <- weekdata[weekdata$region_name == "Luxembourg",]
@@ -163,6 +177,7 @@ ggplot(  aes(date, cpc)) +
   scale_y_continuous("Weekly confirmed new cases per capita ", sec.axis = sec_axis( ~.*0.5, name = "Temperature")) +
   ggtitle("The Temperature and Covid afecttion data in Belgium") 
 ```
+# The weekly average temperature data as the red dots in the graph, and the log data of weekly new case as the gray bars. I have scaled the data in this graph to make it easier to read.  As we can see from the figure, temperature seems to be negatively correlated with infection cases. 
 # Weely confirmed new cases pc vs tempreture
 
 ```{r}
@@ -189,14 +204,12 @@ BLG %>%
 
 # Linear Model fit
 statistic mode
-$$ \pmb{Y= \beta_0+\beta_1X+\epsilon \quad where \quad \epsilon \sim N(0,\sigma^2)} $$
+$$ \pmb{Y= \beta_0+\beta_1T+\epsilon \quad where \quad \epsilon \sim N(0,\sigma^2)} $$
 $$ Y \sim N(0,\sigma^2)$$
 $$\pmb{E}(y_i)=E(\beta_0+\beta_1x_i+\epsilon_i)=\beta_0+\beta_1x_i+E(\epsilon_i)=\beta_0+\beta_1x_i$$
 
-$$Var(y_i)=Var(\beta_0+\beta_1X+\epsilon_i)=Var(\epsilon_i)=\sigma^2$$
-## standard model for the evolution of the infected cases by viruses
-$$dN/dt=L(N) \cdot F(N),  \quad with  \quad L(N) = \lambda \cdot N, F(N)=1-N^b$$
-##where N(t) is the number of total infected cases,Nmax is the maximum possible number of infected cases.
+$$Var(y_i)=Var(\beta_0+\beta_1T+\epsilon_i)=Var(\epsilon_i)=\sigma^2$$
+
 
 ```{r}
 LUX_fit <- LUX %>% 
